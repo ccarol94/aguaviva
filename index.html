@@ -27,7 +27,7 @@
             document.getElementById("status").innerHTML = `Coordenadas capturadas: ${latitude}, ${longitude} - Hora: ${timestamp}`;
 
             // Enviando para o Google Apps Script
-            fetch("https://script.google.com/macros/s/AKfycbwDURXboQHKU3ozkhCFQ5TRxQeWvcqRcpKzlA9ZaSQBNjcM8tdK_keDEkPt-LBYUts/exec", {
+            fetch("https://script.google.com/macros/s/AKfycbx4OyMQ9eN8tPewNoIYgmzlcob3k8j4VMTw3Blsvah1FTz62ZeGIpObpdMsvhe_5LQ/exec", {
                 method: "POST",
                 body: JSON.stringify({ latitude, longitude, timestamp }),
                 headers: { 
