@@ -4,51 +4,127 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Registro de Coordenadas</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+        #status {
+            margin-top: 20px;
+            font-weight: bold;
+        }
+    </style>
 </head>
 <body>
     <h2>Registrar Coordenadas Geográficas</h2>
-    <button onclick="getLocation()">Capturar Localização</button>
+    <button onclick="getLocation()" id="captureButton">Capturar Localização</button>
     <p id="status"></p>
 
     <script>
+        // Função para capturar a localização
         function getLocation() {
+            const button = document.getElementById("captureButton");
+            const status = document.getElementById("status");
+
+            // Desabilita o botão enquanto a localização é capturada
+            button.disabled = true;
+            status.innerHTML = "Capturando localização...";
+
             if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(sendCoordinates, showError);
+                navigator.geolocation.getCurrentPosition(
+                    (position) => sendCoordinates(position), // Sucesso
+                    (error) => showError(error), // Erro
+                    { timeout: 10000 } // Timeout de 10 segundos
+                );
             } else {
-                document.getElementById("status").innerHTML = "Geolocalização não suportada.";
+                status.innerHTML = "Geolocalização não suportada pelo navegador.";
+                button.disabled = false;
             }
         }
 
+        // Função para enviar as coordenadas
         function sendCoordinates(position) {
+            const button = document.getElementById("captureButton");
+            const status = document.getElementById("status");
+
             const latitude = position.coords.latitude;
             const longitude = position.coords.longitude;
             const timestamp = new Date().toLocaleString();
 
-            document.getElementById("status").innerHTML = `Coordenadas capturadas: ${latitude}, ${longitude} - Hora: ${timestamp}`;
+            // Exibe as coordenadas capturadas
+            status.innerHTML = `Coordenadas capturadas: ${latitude}, ${longitude} - Hora: ${timestamp}`;
 
-            fetch("https://script.google.com/macros/s/AKfycbzweGmDS8cwIE72BKTSf_J6qaVXeR7zU1yGTv3XT5lX-TJ04dT_4rzONYWmcuXDbN4/exec", {
-                method: "POST",
-                body: JSON.stringify({ latitude, longitude, timestamp }),
-                headers: { "Content-Type": "application/json" }
-            })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error("Erro na requisição: " + response.statusText);
-                }
-                return response.json();
-            })
-            .then(data => {
-                console.log("Dados enviados:", data);
-                document.getElementById("status").innerHTML += "<br>Dados enviados com sucesso!";
-            })
-            .catch(error => {
-                console.error("Erro:", error);
-                document.getElementById("status").innerHTML += `<br>Erro ao enviar dados: ${error.message}`;
-            });
+            // Envia os dados para o Google Apps Script
+            status.innerHTML += "<br>Enviando dados...";
+            sendDataToGoogleScript({ latitude, longitude, timestamp })
+                .then(data => {
+                    console.log("Dados enviados:", data);
+                    status.innerHTML += "<br>Dados enviados com sucesso!";
+                })
+                .catch(error => {
+                    console.error("Erro:", error);
+                    status.innerHTML += `<br>Erro ao enviar dados: ${error.message}`;
+                })
+                .finally(() => {
+                    // Reabilita o botão após o envio
+                    button.disabled = false;
+                });
         }
 
+        // Função para enviar dados ao Google Apps Script
+        async function sendDataToGoogleScript(data) {
+            try {
+                const response = await fetch("https://script.google.com/macros/s/AKfycbylgJBLVFP3eT5LAXOvaORCagqD4BJ0b5GdKTY6ggpVS_r4SLRf7OF8WndaYwIijew/exec", {
+                    method: "POST",
+                    body: JSON.stringify(data),
+                    headers: { 
+                        "Content-Type": "application/json",
+                        "Accept": "application/json"
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Erro na requisição: ${response.statusText}`);
+                }
+
+                return await response.json();
+            } catch (error) {
+                throw new Error(`Falha ao enviar dados: ${error.message}`);
+            }
+        }
+
+        // Função para exibir erros de geolocalização
         function showError(error) {
-            document.getElementById("status").innerHTML = "Erro ao obter localização.";
+            const status = document.getElementById("status");
+            const button = document.getElementById("captureButton");
+
+            let message = "Erro ao obter localização: ";
+            switch (error.code) {
+                case error.PERMISSION_DENIED:
+                    message += "Permissão negada pelo usuário.";
+                    break;
+                case error.POSITION_UNAVAILABLE:
+                    message += "Localização indisponível.";
+                    break;
+                case error.TIMEOUT:
+                    message += "Tempo de espera excedido.";
+                    break;
+                default:
+                    message += "Erro desconhecido.";
+                    break;
+            }
+
+            status.innerHTML = message;
+            button.disabled = false;
         }
     </script>
 </body>
