@@ -3,10 +3,41 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Meu Site no GitHub Pages</title>
+    <title>Registro de Coordenadas</title>
 </head>
 <body>
-    <h1>Olá, mundo!</h1>
-    <p>Este é meu primeiro site publicado com GitHub Pages.</p>
+    <h2>Registrar Coordenadas Geográficas</h2>
+    <button onclick="getLocation()">Capturar Localização</button>
+    <p id="status"></p>
+
+    <script>
+        function getLocation() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(sendCoordinates, showError);
+            } else {
+                document.getElementById("status").innerHTML = "Geolocalização não suportada.";
+            }
+        }
+
+        function sendCoordinates(position) {
+            const latitude = position.coords.latitude;
+            const longitude = position.coords.longitude;
+            document.getElementById("status").innerHTML = `Coordenadas: ${latitude}, ${longitude}`;
+
+            // Enviando para o Google Sheets API
+            fetch("https://script.google.com/macros/s/SEU_SCRIPT_ID/exec", {
+                method: "POST",
+                body: JSON.stringify({ latitude, longitude }),
+                headers: { "Content-Type": "application/json" }
+            })
+            .then(response => response.json())
+            .then(data => console.log("Enviado:", data))
+            .catch(error => console.error("Erro:", error));
+        }
+
+        function showError(error) {
+            document.getElementById("status").innerHTML = "Erro ao obter localização.";
+        }
+    </script>
 </body>
 </html>
