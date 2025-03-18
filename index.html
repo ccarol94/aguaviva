@@ -27,7 +27,7 @@
             document.getElementById("status").innerHTML = `Coordenadas: ${latitude}, ${longitude} - Hora: ${timestamp}`;
 
             // Enviando para o Google Sheets API
-            fetch("https://script.google.com/macros/s/SEU_SCRIPT_ID/exec", {
+            fetch("https://script.google.com/macros/s/AKfycby0b7oWsq8extn6TdHca827w0iWSbXlCEYgD8YRu3ygPFxtSA1pdLUXBblONCCLeII/exec", {
                 method: "POST",
                 body: JSON.stringify({ latitude, longitude, timestamp }),
                 headers: { "Content-Type": "application/json" }
