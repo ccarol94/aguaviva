@@ -1,40 +1,45 @@
-function doPost(e) {
-  try {
-    // Verifica se os dados foram recebidos
-    if (!e || !e.postData || !e.postData.contents) {
-      throw new Error("Dados não recebidos.");
-    }
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registro de Coordenadas</title>
+</head>
+<body>
+    <h2>Registrar Coordenadas Geográficas</h2>
+    <button onclick="getLocation()">Capturar Localização</button>
+    <p id="status"></p>
 
-    // Parseia os dados recebidos
-    const data = JSON.parse(e.postData.contents);
+    <script>
+        function getLocation() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(sendCoordinates, showError);
+            } else {
+                document.getElementById("status").innerHTML = "Geolocalização não suportada.";
+            }
+        }
 
-    // Valida os dados
-    if (!data.latitude || !data.longitude || !data.timestamp) {
-      throw new Error("Dados incompletos.");
-    }
+        function sendCoordinates(position) {
+            const latitude = position.coords.latitude;
+            const longitude = position.coords.longitude;
+            const timestamp = new Date().toLocaleString(); // Captura a hora atual
 
-    const latitude = data.latitude;
-    const longitude = data.longitude;
-    const timestamp = data.timestamp;
+            document.getElementById("status").innerHTML = `Coordenadas: ${latitude}, ${longitude} - Hora: ${timestamp}`;
 
-    // Abre a planilha e adiciona os dados
-    const sheet = SpreadsheetApp.openById("12oI_GxB5vbvhifCahn5fGI1U40FPL9Jb2itdGwjZOMA").getActiveSheet();
-    sheet.appendRow([timestamp, latitude, longitude]);
+            // Enviando para o Google Sheets API
+            fetch("https://script.google.com/macros/s/SEU_SCRIPT_ID/exec", {
+                method: "POST",
+                body: JSON.stringify({ latitude, longitude, timestamp }),
+                headers: { "Content-Type": "application/json" }
+            })
+            .then(response => response.json())
+            .then(data => console.log("Enviado:", data))
+            .catch(error => console.error("Erro:", error));
+        }
 
-    // Retorna uma resposta de sucesso
-    return ContentService.createTextOutput(JSON.stringify({ 
-      status: "success", 
-      message: "Dados salvos com sucesso!" 
-    }))
-      .setMimeType(ContentService.MimeType.JSON)
-      .addHeader("Access-Control-Allow-Origin", "*"); // Permite CORS
-  } catch (error) {
-    // Retorna uma resposta de erro
-    return ContentService.createTextOutput(JSON.stringify({ 
-      status: "error", 
-      message: error.toString() 
-    }))
-      .setMimeType(ContentService.MimeType.JSON)
-      .addHeader("Access-Control-Allow-Origin", "*"); // Permite CORS
-  }
-}
+        function showError(error) {
+            document.getElementById("status").innerHTML = "Erro ao obter localização.";
+        }
+    </script>
+</body>
+</html>
